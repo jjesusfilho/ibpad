@@ -1,0 +1,1382 @@
+---
+title: "Aula 2"
+author: "Robert McDonnell"
+output:
+  html_notebook:
+    css: custom.css
+---
+
+Novo script, que deve comeÃ§ar com os pacotes e uma limpeza dos objetos na memÃ³ria:
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, cache.lazy = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(stringi)      # instalar se nÃ£o tem
+library(stringr)   
+
+rm(list = ls())
+
+# Dia 2
+
+```
+
+<br>
+
+<br>
+
+<br>
+
+## LiÃ§Ãµes de casa: soluÃ§Ãµes
+
+
+1 - Abrem `brasileiro.dat`. Para ver qual seperador Ã© usado neste arquivo, abrem antes com um text editor.
+
+```{r, eval =F}
+bras <- read_delim("brasileiro.dat", delim = ";")
+
+# OU
+
+bras <- read_csv2("brasileiro.dat")
+```
+
+<br>
+
+2 - O pacote 'lubridate' (vem dentro do 'tidyverse') tem uma funÃ§Ã£o `year()` que tira o ano de uma variÃ¡vel que Ã© no formato de data. Usem isso para ver quantas anos distintos temos nessa base. (NÃ£o precisem criar objetos novos na memÃ³ria.)
+
+```{r, eval =F}
+
+bras %>% 
+  mutate(ano = year(dia)) %>% 
+  distinct(ano)
+
+```
+
+<br>
+
+3 - Filtram a base para ter:
+
+      - sÃ³ 2006;
+      - sÃ³ os anos entre 2009 e 2013;
+      - sÃ³ 2003, 2006, 2009 e 2012.
+
+```{r, eval = F}
+
+bras %>% mutate(ano = year(dia)) %>% filter(ano == 2006) %>% 
+  distinct(ano)
+
+bras %>% mutate(ano = year(dia)) %>% filter(ano >= 2009, ano <= 2013) %>% 
+  distinct(ano)
+
+bras %>% mutate(ano = year(dia)) %>% 
+  filter(ano %in% c(2003, 2006, 2009, 2012)) %>% 
+  distinct(ano)
+```
+
+<br>
+
+4 - Quais times fizeram mais gols em casa num jogo sÃ³? E fora?
+
+```{r, eval =F}
+bras %>% arrange(desc(gols_casa))
+
+bras %>% arrange(desc(gols_fora))
+
+```
+
+**7**! Como Alemanha. `r emo::ji("smiley")`  `r emo::ji("de")` `r emo::ji("de")` `r emo::ji("de")`
+
+<br>
+
+<br>
+
+5 - Quantos gols de casa foram feitos pelo time 'nautico' em 2013?
+```{r, eval =F}
+bras %>% 
+  mutate(ano = year(dia)) %>% 
+  filter(ano == 2013,
+         time_casa == 'nautico') %>%
+  summarise(sum(gols_casa))
+
+```
+
+<br>
+
+6 - Qual time fez mais gols fora durante essa Ã©poca inteira?
+
+```{r, eval =F}
+bras %>% 
+  group_by(time_fora) %>% 
+  summarise(total = sum(gols_fora)) %>% 
+  arrange(desc(total))
+
+```
+
+7 - Quantos gols os Corintianos fizeram em todos estes anos? 
+
+```{r, eval =F}
+bras %>% 
+  filter(time_casa == "corinthians") %>% 
+  summarise(sum(gols_casa))
+
+bras %>% 
+  filter(time_fora == "corinthians") %>% 
+  summarise(sum(gols_fora))
+  
+337 + 245
+```
+
+<br>
+
+8 - Criem uma nova variÃ¡vel que Ã© a balanÃ§a dos gols em casa e fora. 
+
+    - Qual time fez mais gols (segundo nessa variÃ¡vel nova) em 2008?
+    - Entre 2004 e 2007?
+    - No periodo inteiro?
+
+```{r, eval =F}
+
+# Para time fora:
+bras %>% 
+  mutate(balanca = gols_casa - gols_fora,
+         ano = year(dia)) %>%
+  select(-dia) %>% 
+  filter(ano == 2008) %>% 
+  group_by(time_fora) %>% 
+  mutate(total = sum(balanca)) %>% 
+  distinct(time_fora, .keep_all = T) %>% 
+  arrange(desc(total))
+
+# Para time casa:
+bras %>% 
+  mutate(balanca = gols_casa - gols_fora,
+         ano = year(dia)) %>%
+  select(-dia) %>% 
+  filter(ano == 2008) %>% 
+  group_by(time_casa) %>% 
+  mutate(total = sum(balanca)) %>% 
+  distinct(time_casa, .keep_all = T) %>% 
+  arrange(desc(total))
+
+``` 
+
+<br>
+
+9 - Acha o seu time (se nÃ£o tem, escolha um). Renomear o seu time para "meu time". Por exemplo, se eu gosto de palmeiras (nunca!), nÃ£o vai ter mais "palmeiras" nas base, sÃ³ "meu time" cada vez tem palmeiras na base. A funÃ§Ã£o que usamos Ã© `gsub()`. (`?gsub`)
+```{r, eval =F}
+
+bras %>% 
+  mutate(time_casa = gsub("corinthians", "meu time", time_casa),
+         time_fora = gsub("corinthians", "meu time", time_fora)) %>% 
+  filter(time_casa == "meu time")
+
+```
+
+10 - Como o seu time fez? Ã no "top 10" dos times que fazem gols em casa? Fora?
+
+```{r, eval =F}
+bras %>% 
+  mutate(time_casa = gsub("corinthians", "meu time", time_casa),
+         time_fora = gsub("corinthians", "meu time", time_fora)) %>% 
+  arrange(desc(gols_casa))
+
+```
+
+
+<br>
+
+<br>
+
+<br>
+
+## Importar dados pt. 2
+
+Vamos no [http://www.portaldatransparencia.gov.br/downloads/](http://www.portaldatransparencia.gov.br/downloads/) **> Despesas > TransferÃªncias > Pagamentos** e baixa o arquivo por janeiro 2016.
+
+O arquivo que baixamos Ã© `201601_Transferencias.zip`. Embora que seja .zip, sÃ³ tem .csv dentro, entÃ£o podemos abrir com `read_csv()` do pacote readr.
+
+<br>
+
+- VocÃª tem duas opÃ§Ãµes:
+    - coloca o arquivo no seu working directory
+    - ou inclui o caminho para onde baixou na funÃ§Ã£o `read_csv()`.
+    
+
+Aqui, eu vou fazer o segundo.
+
+```{r, eval = F}
+pag <- read_csv("/Users/robert/Downloads/201601_Transferencias.zip")
+
+```
+
+Temos um erro! `invalid multibyte string` quer dizer que tem um tipo de caracter na base que o R nÃ£o consegue interpretar. Vamos abrir este arquivo num text editor.
+
+<br>
+
+<br>
+
+Primeiro, parece que este arquivo Ã© .tsv e nÃ£o .csv (como fala no site! `r emo::ji("angry")`)
+
+O *encoding* deste arquivo Ã© em "Latin 1", que signfica que os strings tem caracteres como "Ã£" e os nÃºmeros usam "," para digitos depois o ponto decimal e "." para mil, como vocÃªs estÃ£o acostumados. Com `locale()`, podemos especificar isso. 
+
+<br>
+
+Pode usar `date_names_langs()` para ver todos os *locales*.
+
+<br>
+
+Vamos ver se melhora:
+
+```{r, message=F, results="hide"}
+
+pag <- read_tsv("/Users/robert/Downloads/201601_Transferencias.zip",
+                locale = locale(encoding = "latin1", decimal_mark = ","))
+```
+
+Ainda temos problemas com *embedded nulls* (os NULOs que vimos), mas nÃ£o Ã© problema grande.
+
+
+<br>
+
+## Lidar com strings pt. 1
+
+Tem umas funÃ§Ãµes simples para fazer nossas vidas mais fÃ¡ceis com caracteres. O pacote `stringi` Ã© cheio de funÃ§Ãµes Ãºteis para trabalhar com strings. Mais para frente, nÃ³s vamos fazer trabalho mais avanÃ§ado usando algo chamado "regular expressions", mas por enquanto vamos usar funÃ§Ãµes mais simples (mas bem bons).
+
+<br>
+
+Primeiro, quais sÃ£o os `colnames` da base?
+
+
+
+<br>
+
+
+
+<br>
+
+
+
+
+```{r}
+colnames(pag)
+```
+
+Depende da programa e do computador de alguÃ©m etc. etc., mas caracteres como a "Ã£" em "Linguagem CidadÃ£" podem causar problemas, principalmente se vocÃª quiser compartilhar estes dados ou mandar para alguÃ©m fora do Brasil que nÃ£o usa essas caracteres.
+
+Podemos transformar todos esses nomes num formato chamado **ASCII** usando uma funÃ§Ã£o chamado `stri_trans_general()` do pacote stringi. Vou deixar voÃ§Ãªs fazerem (nÃ£o precisa de dplyr, sÃ³ a funÃ§Ã£o `colnames()`). 
+
+`stri_trans_list()` tem todas as possibilidades, precisamos escolher uma que vai transformar de *Latin* para *ASCII*.
+
+<br>
+
+<br>
+
+<br>
+
+
+```{r}
+
+colnames(pag) <- stri_trans_general(colnames(pag), "Latin-ASCII")
+
+colnames(pag)
+```
+
+TambÃ©m tem variÃ¡veis dentro da base que tÃªm essas caracteres. Vamos usar o dplyr para mudar o encoding dessas variÃ¡veis.
+
+
+```{r}
+# vou mostrar para uma:
+pag <- pag %>% 
+  mutate(`Nome Sub Funcao` = stri_trans_general(`Nome Sub Funcao`, "Latin-ASCII"))
+
+```
+
+
+Podem remover essa base da memÃ³ria agora.
+
+<br>
+
+
+<br>
+
+<br>
+
+## binding
+
+Podemos juntar dataframes, ou por colunas, ou por linhas. A base R tem as funÃ§Ãµes `cbind()` (bind colunas) e `rbind()` (bind linhas (rows)). 
+
+<br>
+
+O tidyverse tem `bind_cols()` e `bind_rows()`, e nÃ³s vamos usar essas.
+
+<br>
+
+Suponha que tem dois dataframes (vou usar o comando `tibble()` para criÃ¡-los):
+
+```{r}
+
+primeiro <- tibble(tamanho = c(.002, 1.64, 0.998),
+                   especie = c("A", "B", "C"))
+
+
+segundo <- tibble(cumprimento = c(16.1, 12.8, 13.4),
+                  cor = c("Vermelho", "Azul", "Verde"))
+
+
+```
+
+
+Posso juntar estes dataframes num sÃ³? Qual seria melhor, fazer bind por linhas ou colunas?
+
+<br>
+
+
+```{r}
+bind_rows(primeiro, segundo)
+```
+
+<br>
+
+```{r}
+bind_cols(primeiro, segundo)
+```
+
+Neste exemplo, fazer bind por colunas Ã© melhor. Por quÃª?
+
+
+<br>
+
+<br>
+
+Suponhas que nossas bases sÃ£o assim agora:
+
+```{r}
+
+primeiro <- tibble(tamanho = c(.002, 1.64, 0.998),
+                   especie = c("A", "B", "C"))
+
+
+segundo <- tibble(tamanho = c(0.1, 1.28, 1.34),
+                  especie = c("D", "E", "F"))
+
+```
+
+SerÃ¡ que a `bind_rows()` vai funcionar melhor com esses? Por quÃª?
+
+
+<br>
+
+```{r}
+bind_rows(primeiro, segundo)
+```
+
+Nestes exemplos, usamos `bind` com colunas ou linhas pois os dataframes tinham formas semelhantes.
+
+<br>
+
+Suponha agora que tenhamos estes dois bancos de dados: 
+
+```{r}
+A <- data_frame(id = c('SP','RJ','MG','BA'), 
+                valor1 = c(.0023,.0034,.023,.45),
+                valor2= c(.245, .235, .210, .353))
+
+B <- data_frame(id = c('SP','RJ','MG','ES', 'PR'), 
+                valor3 = c("box1","box1","box2","box1","box1"),
+                valor4 = c(1, 3, 4, 5,6))
+```
+
+
+O que acontece quando tentamos usar `bind`?
+
+Estas bases tÃªm algo em comum?
+
+<br>
+
+<br>
+
+## 'Merging'
+
+Para juntar dataframes, podemos fazer um '*merge*'. Isso vai juntar as bases por colunas que eles tÃªm em comum.    
+**Cuidado!**: com bases grandes, essa Ã© uma funÃ§Ã£o "cara" em termos de computaÃ§Ã£o, pois R copia os dois dataframes enquanto estÃ¡ fazendo merge. Pensa bem antes de fazer com bases grandes.  
+
+<br>
+
+Nossos dataframes tÃªm uma coluna chamada `id`. NÃ³s vamos juntar as bases usando essa.
+Temos `merge()` da base, ou um das funÃ§Ãµes `join_*` do dplyr.
+
+## dplyr: `join_*`
+
+Os joins do dplyr vem da lÃ³gica do SQL:
+
+![](SQL.jpg)
+
+<br>
+
+<br>
+
+
+O primeiro, `inner_join()`, mantÃ©m todas as linhas que sÃ£o comuns aos dois bancos:
+
+```{r}
+inner_join(A,B) %>%
+  head()
+```
+
+<br>
+
+<br>
+
+`left_join()` mantÃ©m todas as linhas que sÃ£o comuns aos dois bancos e as linhas exclusivas do da esquerda:
+
+```{r}
+left_join(A,B) %>%
+  head()
+```
+
+<br>
+
+<br>
+
+`right_join()` funciona da mesma maneira que o `left_join()`, mas para a direita:
+
+```{r}
+right_join(A,B) %>% 
+  head()
+```
+<br>
+
+<br>
+
+`full_join()` une as linhas que sÃ£o comuns e mantÃ©m as que nÃ£o sÃ£o:
+
+```{r}
+full_join(A,B) %>%
+  head()
+```
+
+<br>
+
+AlÃ©m desses joins, hÃ¡ algumas outras opÃ§Ãµes:
+
+- O `semi_join()` Ã© similar ao `inner_join()`, mas retorna apenas as colunas do dataframe da esquerda. Ou seja, *filtra* A de uma forma.
+
+
+```{r}
+semi_join(A,B) %>%
+  head()
+```
+
+<br>
+
+- O `anti_join()` retorna as linhas em que nÃ£o hÃ¡ match, mas apenas com as colunas do dataframe da esquerda:
+<br>
+```{r}
+anti_join(A,B) %>%
+ head()
+```
+
+<br>
+Se vocÃª nÃ£o sabe qual tipo de join vocÃª precisa, comeÃ§a com `anti` ou `semi`, pois essas sÃ³ filtram as bases e nÃ£o mudam as bases. Os outros joins sÃ£o "mutating joins", ou seja, mudam as bases.
+
+<br>
+
+Vamos criar dois dataframes pequenos para praticar as formas de juntar bases. (de um exemplo de Jenny Bryan (`@JennyBryan`))
+
+```{r}
+superheroes <- tibble(name = c("Magneto", "Storm", "Mystique", 
+                               "Batman", "Joker", "Catwoman", 
+                               "Hellboy"),
+                      alignment = c("bad", "good", "bad",
+                                    "good", "bad", "bad",
+                                    "good"),
+                      gender = c("male", "female", "female",
+                                 "male", "male", "female",
+                                 "male"),
+                      publisher = c("Marvel", "Marvel", "Marvel",
+                                    "DC", "DC", "DC", "Dark Horse"))
+
+
+publishers <- tibble(publisher = c("DC", "Marvel", "Image"),
+                     year_founded = c(1934, 1939, 1992))
+
+
+```
+
+<br>
+
+<br>
+
+<bdi style="color:#1874CD;">
+**Exercicios:**  
+1) Faz um `inner_join()` de superheroes e publishers. Perco algo?  
+2) Faz `semi_join()` da mesma coisa. Ã igual Ã  `inner_join()`?  
+3) Vamos fazer `left_join()` de superheroes e publishers. Tem `year_founded` para 'Hellboy'? Se nÃ£o, por quÃª?  
+4) Eu quero sÃ³ Hellboy. Qual join eu uso?  
+5) Eu quero um dataframe de toda a informaÃ§Ã£o que temos nessas bases. Qual join eu uso?  
+</bdi>
+
+<br>
+
+<br>
+
+
+<br>
+
+<br>
+
+## tidyr
+
+- O tidyr Ã© um pacote criado por Hadley no lugar do `reshape2` (um pacote mais antigo) e ele permite que a gente execute uma sÃ©rie de operaÃ§Ãµes de forma a limpar o banco de dados. Possui uma sÃ©rie de funÃ§Ãµes Ãºteis. Ã uma extensÃ£o de dplyr, com funÃ§Ãµes para fazer umas coisas mais complexas com dados. Pode ser que demore um pouco para entender a lÃ³gica de umas dessas funÃ§Ãµes, especialmente para quem nÃ£o estÃ¡ acostumado com esse tipo de operaÃ§Ã£o (eu nÃ£o era no comeÃ§o, tidyr quebrou minha cabeÃ§a).  
+
+<br> 
+
+- Umas das funÃ§Ãµes do tidyr precisa de um conhecimento de como lidar com `chr`, ou strings. A linguagem que usamos para isso Ã© o "regular expressions" ('regex'), que Ã© poderosa mas nÃ£o Ã© sempre fÃ¡cil. Neste curso vamos fazer sÃ³ um pouco de regex, mas tem recursos online (por exemplo, rexegg.com). 
+
+<br>
+
+<bdi style="color:#CD0000">WARNING!!! REGEX Ã **DIFÃCIL**!</bdi>
+
+<br>
+
+<br>
+
+<br>
+![](rexegg.png)
+
+<br>
+
+O pacote do tidyverse que usamos para mexer com string Ã© chamado `stringr`. Ã baseado naquele que usamos jÃ¡, o `stringi`, que Ã© muito bom, embora que nÃ£o seja tÃ£o amigÃ¡vel quanto `stringr`.  
+
+<br>
+
+O ideia bÃ¡sica de regex Ã© que podemos manipular caracteres.   
+  
+  
+Para fazer isso, regex tem jeitos de distiguir entre *tipos* de caracteres. Isso Ã© complicado pelo fato que regex precisa de um extra `\` no R, porque `\` Ã© usado por regex mas jÃ¡ Ã© caracter especial no R. Em outras palavras, se vocÃª precisa de um cÃ³digo de regex que Ã© `\W`, no R vai ser `\\W`.  
+
+<br>
+
+<br>
+
+
+No exercisio de casa, procuramos o nome do seu time, e usamos `grep()` para isso. A funÃ§Ã£o `grep()` utiliza regex para achar uma palavra ou catacteres.
+
+
+<br>
+
+<br>
+
+Por exemplo, `gsub("cruzeiro", "meu time", x)` procura a palavra "cruzeiro" no string `x`, e a substitui por "meu time". Se eu uso `grep("ab", x)`, eu procuro "ab" no objeto x.
+
+Vamos tentar uns exemplos. Vamos criar um vetor de caracteres, usando um pacote meio bizarro que cria insultos 'Shakespeareanos':  
+
+```{r, eval = F}
+install.packages("devtools")
+
+devtools::install_github("hrbrmstr/bismer")
+library(bismer)
+
+insultos <- purrr::map_chr(1:10, ~ insult())
+```
+```{r, echo = F}
+library(bismer)
+insultos <- purrr::map_chr(1:10, ~ insult())
+```
+<br>
+
+Vamos ver estes insultos:  
+
+```{r}
+insultos
+```
+
+`r emo::ji("confused")`
+
+Vamos usar isso como vetor e fazer umas operaÃ§Ãµes nele. 
+
+
+<bdi style="color:#1874CD;">
+**Exercicios:**  
+1 - Use `grep()` para achar um insulto (sÃ³ uma palavra) que vocÃª gostou.  
+2 - Trocam um por um insulto mais moderno com `gsub()`.     
+3 - Mudam tudo para letras maiÃºsculos com `toupper()`  
+
+<br>
+
+
+
+<br>
+
+
+`gsub` e `grep` sÃ£o da base R.   
+
+Os pacotes stringr e stringi usam um regex um pouco diferente que a base, mas podemos usar as duas juntos. O do `stringi` funciona melhor, eu acho.  
+
+Quando estamos procurando caracteres, queremos dizer ao R *quantas* queremos. 
+
+`?stringi-search-regex`
+
+<br>  
+
+<br>  
+
+Usamos esses com uma das metacaracteres do regex. Tem bastante, mas uns Ãºteis sÃ£o:
+
+  regex                            correspondÃªncia
+----------- --------------------------------------
+  `^`            comeÃ§a do string (ou uma negaÃ§Ã£o)
+  `.`                            qualquer caracter
+  `$`                                 fim da linha
+ `[maÃ§a]`      procura as caracteres `m`, `a`, `Ã§`
+  `maÃ§a`                                    `maÃ§a`  
+  `[0-9]`                                  nÃºmeros
+  `[A-Z]`                 qualquer letra maiÃºscula 
+  `\\w`                                uma palavra
+  `\\W`                              nÃ£o Ã© palavra 
+                        (Ã© puntuaÃ§Ã£o, espaÃ§o etc.)
+  `\\s`            um espaÃ§o (tab, newline, space)
+--------------------------------------------------
+
+Se vocÃª quer um literal `$`, tem que usar `\$`, que no R, tem que ser `\\$`.
+
+<br>
+
+<br>
+
+<br>
+
+Vamos criar um vetor de strings.
+
+```{r}
+
+strings <- c("#rstats", "24", "JoÃ£o", " ", "ADaM", "$500", "a")
+
+```
+
+<br>
+
+Vamos procurar "a" em `strings`:
+
+```{r}
+str_detect(strings, "a")
+```
+
+<br>
+
+<br>
+
+Temos trÃªs "a". Mas quero sÃ³ "ADaM":
+
+```{r}
+str_detect(strings, "[ADaM]")
+```
+
+Hmm, ainda tenho trÃªs. 
+
+<br>
+
+<br>
+
+```{r}
+str_detect(strings, "ADaM")
+```
+
+Agora achou. E o "Ã£" em "JoÃ£o"?
+
+```{r}
+str_detect(strings, "Ã£")
+```
+
+<br>
+
+Temos coisas que nÃ£o sÃ£o palavras aqui. Por exemplo o quarto elemento:
+
+```{r}
+
+strings[4]
+```
+
+Mas tem mais que isso por causa das caracteres de pontuaÃ§Ã£o:
+
+```{r}
+str_detect(strings, "\\W")
+```
+
+<br> 
+
+<br>
+
+<br>
+
+<br>
+
+Regex Ã© bem difÃ­cil mas normalmente queremos sÃ³ algo simples de um string, como fizemos com "meu time". A coisa importante lembrar Ã© que temos "palavras" e elementos que nÃ£o sÃ£o palavras. Quando vocÃª faz web-scraping, pode ser que o scrape retorna algo do tipo:
+
+`<p>This is my page. To contact me, call 011-9828-2888-3326</p>`  
+
+<br>
+
+Como podemos tirar o `<p>`? Ou tirar sÃ³ o nÃºmero? Usamos regex.   
+
+<br>
+
+<br>
+
+Um truc (que uso sempre)  Ã© subsituir o que vocÃª **nÃ£o quer** por nada (`""`): 
+
+```{r}
+
+web <- "<p>This is my page. To contact me, call 011-9828-2888-3326</p>"
+
+gsub("[\\<p>/]", "", web)
+```
+
+*(Notaram como nÃ£o ficou perfeito?)*
+
+<br>
+
+```{r}
+gsub("[\\<p>/\\.a-z, A-Z]", "", web)
+```
+
+<br>
+
+NÃ³s vamos usar regex, mas sÃ³ de uma forma simples.
+
+<br>
+
+<br>
+
+<bdi style="color:#1874CD;">
+**Exercicios:**   
+Criem essa vetor de strings:</bdi>
+```{r}
+carac <- c("join", "JOIN", "#join", "1st joinn")
+```
+<bdi style="color:#1874CD;">
+1) Corrigem o Ãºltimo elemento para ser "1st join".  
+2) `str_detect(carac, "\\w")` me mostra que todos os elementos que sÃ£o "palavras". Mas tem uns que nÃ£o sÃ£o?  
+3) Usam `\\d` para saber qual elemento tem um nÃºmero.  
+4) Procurem `#`. Substitue por `.`. Procura o elemento ".join" agora.
+</bdi>
+
+<br>
+
+<br>
+
+<br>
+
+## (voltando ao) **tidyr**
+
+
+HÃ¡ vÃ¡rias maneiras de se dispor de um dataframe. Por exemplo, verifiquem essa base de resultados de um tratamento mÃ©dico, que Ã© no formato "wide":
+
+<br>
+
+| Id | Grupo     | Tratamento_a | Tratamento_b | Tratamento_c |
+| -- | --------- | ------------ | ------------ | ------------ |
+| 1  | Grupo  1  |    .36       |    .15       |    .43       |
+| 2  | Grupo  2  |    .25       |    .12       |    .33       |
+| 3  | Grupo  3  |    .30       |    .13       |    .35       |
+
+<br>
+
+- HÃ¡ alguma outra forma de representar a mesma informaÃ§Ã£o usando um dataframe?
+
+
+<br>
+
+<br>
+
+
+- HÃ¡ outras formas de se representar os mesmos dados. Uma outra forma seria trocar linhas por colunas. Outra forma seria transformar algumas colunas em informaÃ§Ã£o. Por exemplo, veja esta nova tabela, no formato "long":
+
+<br>
+
+
+|Id | Grupo   | Tratamento | Valor |
+| - | ------- | ---------- | ----- |
+| 1 | Grupo 1 |      a     | .36   |
+| 1 | Grupo 1 |      b     | .15   |
+| 1 | Grupo 1 |      c     | .43   |
+| 2 | Grupo 2 |      a     | .25   |
+| 2 | Grupo 2 |      b     | .12   |
+| 2 | Grupo 2 |      c     | .33   |
+| 3 | Grupo 3 |      a     | .30   |
+| 3 | Grupo 3 |      b     | .13   |
+| 3 | Grupo 3 |      c     | .35   |
+
+<br>
+
+<br>
+O jeito que vocÃª mantenha os seus dados dependem muito do objetivo da anÃ¡lise. Dados que sÃ£o organizados ao longo do tempo sÃ£o melhores no formato *long*, por exemplo.  
+
+<br>
+
+- Segundo Hadley, um dataset tem de obedecer trÃªs princÃ­pios: 
+    a) cada variÃ¡vel representa uma coluna;  
+    b) cada observaÃ§Ã£o forma uma linha;  
+    c) cada tipo de unidade observacional forma uma tabela.  
+
+<br>
+
+- O tidyr vai nos oferecer ferramentar para conseguir trabalhar esses tipos de bancos. Limpar bancos frequentemente pode ser 80-90 % de todo trabalho de analisar dados. `r emo::ji("confounded")`  
+
+<br> 
+
+<br> 
+
+<br> 
+
+## `separate()`
+
+- Este comando separa 1 colunas em duas ou mais, com base em algum padrÃ£o de character ou regex.
+
+
+```{r} 
+df <- data.frame(x = c("a.b", "a.d", "b.c")) 
+head(df)
+```
+
+
+```{r}
+df %>% separate(col = x, into = c("A", "B"), sep = "\\.")
+```
+
+<br> 
+
+- VocÃª pode tambÃ©m determinar qual separador deseja, basta usar o argumento `sep`
+
+```{r, eval=F} 
+df <- data.frame(x = c("a:b", "a:d", "b:c"))
+head(df)
+```
+
+```{r}
+df %>% separate(x, c("A", "B"), sep = ":")
+```
+
+<br> 
+
+<br> 
+
+- O que ocorre se vocÃª tem mais de uma opÃ§Ã£o por linha:
+
+```{r} 
+df <- data.frame(x = c("a.b.c", "a.d.e.f", "b.c"))
+df %>% separate(x, c("A", "B", "C","D"), sep = "\\.")
+```
+
+
+<br> 
+
+<br> 
+
+## `unite()`
+
+Este comando Ã© o contrÃ¡rio de separate. Ele une mais de uma colunas em uma sÃ³.
+
+```{r}
+df <- data.frame(x = c("a.b.c", "a.d.e", "b.c.e")) %>% separate(x, c("A", "B", "C")) 
+df %>% unite(x, A, B, C)
+```
+
+<br> 
+
+*Por que tem `_` agora entre as letras?*
+
+Entretanto, hÃ¡ bugs quando vocÃª tenta unir colunas com "NA". 
+
+<br> 
+
+```{r} 
+df <- data.frame(x = c("a.b.c", "a.d.e.f", "b.c")) %>% # 
+  separate(x, c("A", "B", "C", "D"), sep = "\\.")
+
+df %>% unite(x, A, B, C, D)
+```
+
+Podemos consertar isso com `gsub()`?
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+
+## `spread()`  
+
+`spread()` espalha valores dentro de uma coluna em colunas prÃ³prias.
+
+
+```{r}
+teste_medico <- data_frame(grupo = c("Grupo 1", "Grupo 1", 
+                                     "Grupo 1", "Grupo 2", 
+                                     "Grupo 2", "Grupo 2", 
+                                     "Grupo 3", "Grupo 3", 
+                                     "Grupo 3"),
+                           tratamento = c("a", "b", "c", 
+                                          "a", "b", "c", 
+                                          "a", "b", "c"),
+                           valor = c(.36, .15, .43, .25,
+                                     .12, .33, .30, .13, .35))
+
+head(teste_medico)
+```
+
+<br>
+
+```{r}
+test_2 <- teste_medico %>% spread(key = grupo, value = valor)
+head(test_2)
+```
+
+<br>
+
+## `gather()`  
+
+- FunÃ§Ã£o gather Ã© a funÃ§Ã£o contrÃ¡ria do spread. Ele recolhe os valores espalhados por colunas e cria duas colunas.
+
+```{r}
+test_2 %>%
+  gather(key = grupo, value = valor, -tratamento) 
+```
+
+Usamos o `-` em frente de `tratamento` para deixar essa variÃ¡vel fora. (Deixa dentro para ver o que acontece.)
+
+<br>
+
+<br>
+
+## `unnest()`
+
+- A funÃ§Ã£o "unnest" expande os valores de uma coluna, transformando a unidade do banco. Bastante importante se vocÃª tem alguma coluna cujos valores estejam separados por "," ou qualquer outro separador  
+
+- Exemplo:   
+```{r}
+df <- data_frame(x = 1:3,
+                 y = c("a", "d,e,f", "g,h"))
+df
+```
+
+
+```{r}
+df %>%
+  unnest(y = strsplit(y, ",")) 
+```
+
+```{r}
+df <- data_frame(x = 1:2,
+                 y = list(
+                   data_frame(z = 1),
+                   data_frame(z = 3:4)))
+df
+```
+
+
+```{r}
+df %>% unnest(y)
+```
+
+Essas funÃ§Ãµes de `tidyr` sÃ£o um pouco nÃ£o-intuitivo. Mas as vezes sÃ£o extremamente Ãºteis, principalmente o `separate` e `gather`. 
+
+
+<br>
+
+<br>
+
+<bdi style="color:#1874CD;">
+**Exercicios:**  
+NÃ³s vamos usar o `mtcars` para tudo isso. Carrega `mtcars`, mas cria outro objeto, `cars2`.  
+1) Primeiro, cria uma coluna que Ã© chamado `car`, e Ã© os row.names do mtcars. Pode deletar os row.names depois.    
+2) Separar a variÃ¡vel `car` em duas novas. A primeira vai ser a marca do carro, e a segunda vai ser o tipo. Exemplo: "Mazda RX4" vira "Mazda" e "RX4".  
+3) Vamos criar uma variÃ¡vel "dummy" (1 quando a condiÃ§Ã£o Ã© verdade, 0 senÃ£o). Primeiro, cria uma variÃ¡vel que sÃ³ tem o valor 1.  
+4) Usa isso, com `spread()`, para criar variÃ¡veis dummy para todas as marcas do carro. Exemplo: Se o carro Ã© Mercedes, vai ser 0 em toda linha que nÃ£o Ã© Mercedes, e 1 quando Ã©.  
+</bdi>
+
+<br>
+
+<br>
+
+## Web Scraping
+
+Tem dois jeitos de interagir com a internet usando linguagens como R. O primeiro Ã© "scrape" a informaÃ§Ã£o das pÃ¡ginas, que Ã© texto afinal, e o segundo Ã© navegar num browser. Eu sugiro evitar o segundo se nÃ£o for 100% necessÃ¡rio, pois, alÃ©m de ser bem mais difÃ­cil, Ã© menos confiÃ¡vel e dÃ¡ erro mais frequentemente.  
+
+<br>
+  
+O tidyverse tem trÃªs pacotes que lidam com dados da internet. O primeiro Ã© `rvest`, que "parse" (simplificar) texto da net.  
+O segundo Ã© `xml2`, que Ã© usado para lidar com o xml da net. `rvest` Ã© construido em cima de `xml2`, pois `xml2` Ã© menos "user-friendly".    
+O terceiro Ã© `jsonlite`, que Ã© usado para manejar dados no formato JSON, que Ã© comum na internet.  
+
+<br>
+
+Web scraping pode ser fÃ¡cil, ou muito complexo. Para tratar com "drop-down menus" e fazer algo mais complexo, precisa entender um pouco de css ou xml. Esse Ã© fora do escopo do curso.
+
+<br>
+
+Para quem quer aprender mais, sugiro comeÃ§ar com:  
+`help(package = "rvest")` e clicar em `User guides, package vignettes and other documentation` e depois `rvest::selectorgadget`.  
+
+<br>
+
+<br>
+
+## Usando rvest  
+
+Primeiro:  
+
+```{r}
+library(rvest)
+```
+
+`rvest` Ã© bom para extrair elementos que queremos de 'html', que Ã© a linguagem bÃ¡sica da internet.  
+
+O que Ã© html?  
+
+[http://www.w3schools.com/html/tryit.asp?filename=tryhtml_basic_document](http://www.w3schools.com/html/tryit.asp?filename=tryhtml_basic_document)
+
+
+No R, passamos um url (endereÃ§o) para o `rvest`, que tem umas funÃ§Ãµes que podemos usar. Um exemplo:
+
+```{r}
+url <- 'http://www.espn.com/nfl/history/leaders'
+
+page <- read_html(url)
+
+# html_text(page)
+```
+
+Hmmm, sÃ³ tirando o texto dessa pÃ¡gina nÃ£o vai funcionar. Vamos Ã  pÃ¡gina para explorar mais.  
+
+[http://www.espn.com/nfl/history/leaders](http://www.espn.com/nfl/history/leaders)
+
+<br>
+
+  
+<br>
+  
+
+O que queremos Ã© uma tabela. `rvest` tem uma funÃ§Ã£o, `html_table()` que tira tabela da html e cria dataframe. Infelizmente, lidar com dados da net quase nunca Ã© simples. Essa funÃ§Ã£o vai *quase* nÃ³s dar o que queremos.  
+
+```{r}
+
+leaders <- html_table(page)
+
+str(leaders)
+```
+
+<br>
+
+NÃ³s temos o dataframe, mas estÃ¡ dentro de uma lista (listas no R podem conter qualquer coisa). Trabalhar com listas Ã© um pouco chato, mas podemos extrair o dataframe assim:
+
+<br>
+
+```{r}
+
+leaders <- leaders[[1]]
+
+```
+
+A sintaxe para listas Ã©:   
+- `[x]` te dÃ¡ o elemento 'x' da lista, no formato de lista;  
+- `[[x]]` te dÃ¡ o elemento 'x' da lista, no formato que Ã©.   
+
+<br>
+
+`leaders[[1]]` nÃ³s deu o primeiro elemento da lista `leaders`, no formato de dataframe, pois Ã© dataframe. Vamos dar uma olhada a esse dataframe:    
+
+```{r}
+
+head(leaders)
+
+```
+
+<br>
+
+Muito bom! Mas nÃ£o Ã© *perfeito*. Dado que somos peritos em tidy data, vamos arrumar rapidinho. Eu acho que `RK` deve ser "rank" e `TD` deve ser "touchdowns". Estamos faltando uns nÃºmeros no rank, e temos uns nomes que tem letras MAIÃSCULOS, sei lÃ¡ porque. Eu quero tira a primeira linha, muda os nomes das colunas para ser {`Rank`, `Player`, `Touchdowns`}, consertar o `NA` em `Rank` e mudar os nomes que sÃ£o maiÃºsculos. Para fazer isso, vamos usar o truc que mostrei antes, que Ã© a funÃ§Ã£o `Negate()`.  
+
+Lembram? Se Eu quero fazer um filter que Ã© o contrÃ¡rio de `%in%`, com `Negate()`, Ã© fÃ¡cil:
+
+```{r}
+
+'%ni%' <- Negate('%in%')
+
+```
+
+Agora temos uma operadora que podemos usar.  
+
+<br>
+
+<br>
+
+<br>  
+
+```{r}
+
+leaders <- leaders %>% 
+  rename(Rank = X1, Player = X2, Touchdowns = X3) %>% 
+  filter(Rank %ni% c("Touchdown Leaders", "RK"),
+         Player %ni% c("Touchdown Leaders", "PLAYER"),
+         Touchdowns %ni% c("Touchdown Leaders", "TD")) %>% 
+  mutate(Rank = seq(from = 1, to = 20, by = 1),
+         Player = ifelse(Player == "ANTONIO GATES", "Antonio Gates",
+                         ifelse(Player == "LARRY FITZGERALD", "Larry Fitzgerald", Player)))
+
+leaders
+```
+
+
+
+<br>
+
+<br>
+
+<bdi style="color:#1874CD;">
+**Exercicios:**  
+Vamos a [http://espn.go.com/nfl/superbowl/history/winners](http://espn.go.com/nfl/superbowl/history/winners).   
+1)  Scrape a tabela da pÃ¡gina.  
+2)  Tira as duas primeiras linhas usando `filter()` (e `%ni%`).  
+3)  Muda os nomes das colunas.  
+4) A variÃ¡vel que Ã© o data, eu quero no formato data mesmo. O pacote `lubridate` tem uma funÃ§Ã£o `parse_date_time()` que podemos usar. O argumento `orders` da funÃ§Ã£o vai ser `"%b%d%Y"`, que Ã© nome do mÃªs abbreviado (`%b`), dia do mÃªs como nÃºmero (`%d`) e ano (`%Y`).  
+5) Usa `separate()` para criar quatro variÃ¡veis novas: `Team_1` e `Team_2`, e `Stadium` e `City`. Para `Stadium` e `City`, usa a funÃ§Ã£o da base `trimws()` para limpar espaÃ§o branco das palavras.  
+6) Usa `mutate()` e `gsub()` para tirar parenteses e nomes dos estados da variÃ¡vel `City`.  
+
+</bdi>
+
+<br>
+
+<br>
+
+```{r, eval = F}
+winners <- winners %>% 
+  filter(X1 %ni% c('Super Bowl Winners and Results', 'NO.'),
+         X2 %ni% c('Super Bowl Winners and Results', 'DATE'),
+         X3 %ni% c('Super Bowl Winners and Results', 'SITE'),
+         X4 %ni% c('Super Bowl Winners and Results', 'RESULT')) %>% 
+  rename(Number = X1, Date = X2, Site = X3, Result = X4) %>% 
+  mutate(Date = parse_date_time(Date, "%b%d%Y")) %>% 
+  separate(Result, into = c("Team_1", "Team_2"), sep = ", ") %>% 
+  separate(Site, into = c("Stadium", "City"), sep = "\\(") %>% 
+  mutate(City = trimws(City),
+         Stadium = trimws(Stadium),
+         City = gsub("\\)", "", City),
+         City = gsub("Calif.", "", City),
+         City = gsub("Fla.", "", City),
+         City = gsub("Ariz.", "", City),
+         City = gsub("N.J.", "", City),
+         City = gsub("Texas", "", City),
+         City = gsub("Mich.", "", City),
+         City = gsub(", ", "", City),
+         City = ifelse(Number %in% c("I", "VII"), "Los Angeles", City),
+         City = ifelse(Stadium == "Tampa", "Tampa",
+                       ifelse(Stadium == "Stanford", "Stanford", City)))
+
+```
+
+
+<br>
+
+Nestes exemplos, usÃ¡mos `filter()` para tirar linhas de um dataframe. Se vocÃª quiser tirar muitas linhas, usa os colchetes. Vamos supor que vocÃª quer tirar linhas 1 atÃ© 20 de um dataframe `df`:
+
+```{r, eval = FALSE}
+
+df <- df[-1:-20, ]
+
+```
+
+
+<br>
+
+<br>
+
+
+# ProgramaÃ§Ã£o: mais sobre condiÃ§Ãµes no R, funÃ§Ãµes e loops
+
+
+## if-else
+
+- O comando if ("se") permite que vocÃª teste uma condiÃ§Ã£o no R, como jÃ¡ vimos nas funÃ§Ãµes `ifelse()` e a versÃ£o do dplyr, `if_else()`.
+
+- Mas `if` pode ser usado de uma forma mais geral:  
+
+```{r, eval=F} 
+if( condicao ){
+  faz algo
+}
+```
+
+
+- AlÃ©m do `if`, nÃ³s podemos continuar testando condiÃ§Ãµes.
+- Por exemplo, se apÃ³s testarmos uma, queremos testar o contrÃ¡rio daquela, utilizando `else` ("senÃ£o")
+
+```{r, eval=F}
+if( condicao){
+  faz algo
+} else {
+ faz algo
+}
+```
+
+
+
+## Loop - `while`
+
+- `while` executa um determinado bloco atÃ© que uma condiÃ§Ã£o mude.
+- Esse processo Ã© chamado de iteraÃ§Ã£o e Ã© bastante comum em computaÃ§Ã£o.  
+- `while` pode ser perigoso, usa com cauÃ§Ã£o. Se uma condiÃ§Ã£o sempre for verdade, a computaÃ§Ã£o nÃ£o vai parar.  
+
+- *lembram o que `cat()` faz?*  
+
+```{r}
+x <- 1
+while(x < 100){
+  cat('x + ')
+  x <- x + 1
+}
+cat('Chegou ao fim')
+```
+
+- *O que esta acontecendo nessas comandas?*  
+
+
+## Loop - `for`  
+
+- `for` itera um determinado bloco de cÃ³digos por um conjunto
+- Ele Ã© feito especialmente para lidar com vetores  
+
+```{r}
+for(i in 1:10){
+  print(i)
+}
+```
+
+- NÃ£o sÃ³ em vectors de nÃºmeros Ã© possÃ­vel fazer o loop, em characters tambÃ©m.  
+
+```{r}
+lista_carros <- c("gol", "uno","sandero","fiesta")
+
+for(i in lista_carros) {
+  print(i)
+}
+```
+
+<br>  
+
+
+- Ã possÃ­vel usar `if` dentro de `for` loops e vice-versa.  
+- Por exemplo, se vocÃª quiser testar em uma sequencia de nÃºmeros quais sÃ£o pares e quais nÃ£o sÃ£o, poderÃ­amos fazer:  
+
+```{r}
+for(i in 1:30){
+  if(i %% 2 == 0){
+    print(i)
+  }
+}
+```
+
+
+
+## Nested Loops  
+
+- Ã possÃ­vel utilizar um loop dentro de outro. 
+- Isso serÃ¡ muito Ãºtil sobre quando estivermos lidando com data.frames ou matrizes.  
+
+```{r}
+for (i in 1:10) {
+  cat('\n')           # \n  cria nova linha
+  for (j in 1:10) {
+    cat(j)
+    cat(', ')
+  }
+}
+```
+
+<br>
+
+
+## functions
+
+- Ãs vezes, Ã© mais fÃ¡cil resumir certos blocos de cÃ³digo por 'functions', uma vez que isso economizar ter de digitar o cÃ³digo varias vezes.  
+
+- 'functions' sÃ£o declaradas assim:  
+
+```{r, eval = F}
+nome_da_funcao <- function(parametros){
+  
+  # faz algo
+  
+  return(valores_retornados)
+}
+```
+
+
+- Um exemplo de funÃ§Ã£o que soma dois numeros:
+
+```{r}
+soma_dois <- function(a, b){
+  valor <- a + b
+  return(valor)
+}
+```
+
+Depois, essa funÃ§Ã£o existe na memÃ³ria do R como objeto, e podemos usÃ¡-la.
+
+```{r}
+
+soma_dois(3, 5)
+
+soma_dois(2, 9)
+
+```
+
+
+Podemos incluir avisos para o usuario:
+
+```{r, eval=F}
+soma_dois <- function(a, b){
+  if(!is.numeric(a) | !is.numeric(b)){
+    stop("Stop! a and b must be numeric. \n")
+  }
+  valor <- a + b
+  return(valor)
+}
+
+soma_dois("1", 2)
+```
+
+<br>
+
+<br>
+
+<bdi style="color:#1874CD;">
+**Exercicios:** </bdi> 
+
+<bdi style="color:#1874CD;">1) Cria uma funÃ§Ã£o que aceita um parÃ¢metro, que Ã© de caracter. Essa funÃ§Ã£o vai usar a funÃ§Ã£o da base `toupper()` que transforma letras minÃºsculos em maiÃºsculos. Se o usario passa um argumento que nÃ£o Ã© caracter, deve ter aviso.</bdi>  
+
+
+
+<br>
+
+<br>
+
+```{r}
+
+maiu <- function(x){
+  if(!is.character(x)){
+    cat("Stop! 'x' must be a character")
+  }
+  x <- toupper(x)
+  return(x)
+}
+
+
+maiu("siMon")
+
+```
+
+

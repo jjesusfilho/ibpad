@@ -1,0 +1,71 @@
+---
+title: "Introdução ao R"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE)
+.libPaths("/home/rstudio/R/x86_64-pc-linux-gnu-library/3.4")
+```
+
+
+## Tópico 1
+
+### Operações básicas
+Some um mais um 
+
+```{r adicao, exercise=TRUE}
+
+```
+
+### Criando funções no R
+
+Agora que você já aprendeu como criar funções, uma função com os argumentos x e y para somá-los. A estrutura da função já está pronta.
+
+```{r add-function, exercise=TRUE, exercise.lines = 5}
+adicionar <- function(x,y) {
+  x+y
+}
+```
+
+## Tópico 2
+
+### Exercise with Hint
+
+Modifique o código seguinte para limitar o número de linhas para cinco:
+
+```{r print-limit, exercise=TRUE, exercise.eval=TRUE}
+mtcars
+```
+
+```{r print-limit-hint}
+head(mtcars)
+```
+
+### Quiz
+
+Função para agrupar muitas questões juntas.*
+
+Algumas questões para verificar se você entende os propósitos de alguns dos pacotes básicos do R:
+
+```{r quiz}
+quiz(
+  question("Qual desses pacotes contém funções para instalar outros pacotes do R?",
+    answer("base"),
+    answer("tools"),
+    answer("utils", correct = TRUE),
+    answer("codetools")
+  ),
+  question("Quais dos pacotes abaixo são usados para plotar gráficos?",
+    answer("lattice", correct = TRUE),
+    answer("tools"),
+    answer("stats"),
+    answer("grid", correct = TRUE)
+  )
+)
+```
+
+
+

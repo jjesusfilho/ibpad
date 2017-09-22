@@ -1,0 +1,27 @@
+---
+title: "Manuseando dados no R"
+author: "José de Jesus Filho"
+date: "9/21/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introdução
+
+Nessa aula iremos dar continuidade à aula anterior, que trabalhou com a manipulação de dados. No entanto, antes de iniciar a manipulação, nós iremos aprender a usar algumas ferramentas úteis para organizar o trabalho. Iniciar com um projeto com diretórios bem definidos e documentado é fundamental para o sucesso do trabalho. 
+
+O que aprenderemos hoje:
+
+1 - Baixar e configurar o Git;
+
+2 - Criar uma conta no Github;
+
+## Versionamento de código com Git e Github
+
+
+
+## Criando projetos
+
